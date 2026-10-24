@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>King's Cup | キングスカップ</title>
+  <style>
+    :root {
+      --bg: #0c0610;
+      --bg-2: #1a0b18;
+      --surface: rgba(28, 14, 32, 0.88);
+      --gold: #f3c14a;
+      --gold-2: #ffe9a3;
+      --red: #e23d4a;
+      --ink: #fff7ea;
+      --muted: #c9b8a4;
+      --king: #9b6bff;
+      --joker: #3dd6c6;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #3a1533 0%, transparent 50%),
+        radial-gradient(900px 500px at 110% 10%, #1d2a4a 0%, transparent 46%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 16px 16px 28px;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .brand small {
+      letter-spacing: 0.28em;
+      font-size: 10px;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .turn-banner {
+      background: var(--surface);
+      border: 1px solid rgba(243,193,74,0.25);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .turn-banner .label { font-size: 11px; color: var(--gold); letter-spacing: 0.16em; }
+    .turn-banner .name { font-size: 22px; font-weight: 800; margin-top: 2px; }
+    .players-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .chip {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: var(--muted);
+    }
+    .chip.current { background: var(--gold); color: #2a1608; font-weight: 800; }
+    .chip.mate { outline: 1px solid var(--joker); }
+
+    .stage {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .deck-wrap, .drawn-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .hint { font-size: 12px; color: var(--muted); }
+
+    .card {
+      width: 138px;
+      height: 196px;
+      border-radius: 14px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(.2,.8,.2,1);
+    }
+    .card.flipped .card-inner { transform: rotateY(180deg); }
+    .face, .back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px;
+    }
+    .back {
+      background:
+        repeating-linear-gradient(45deg, #5b1630 0 8px, #3d1022 8px 16px);
+      border: 3px solid var(--gold);
+    }
+    .back::after {
+      content: "K";
+      margin: auto;
+      width: 62px;
+      height: 62px;
+      border: 2px solid var(--gold-2);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--gold-2);
+    }
+    .face {
+      transform: rotateY(180deg);
+      background: #fffaf2;
+      color: #1b1110;
+      border: 3px solid #ead7b0;
+    }
+    .face.red { color: var(--red); }
+    .face.black { color: #1b1110; }
+    .face.joker {
+      background: linear-gradient(180deg, #141428, #2a1040);
+      color: var(--gold-2);
+      border-color: var(--joker);
+    }
+    .rank {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .suit { font-size: 22px; }
+    .center-suit {
+      font-size: 54px;
+      text-align: center;
+      margin: auto 0;
+    }
+    .rank.bl { align-self: flex-end; transform: rotate(180deg); }
+
+    .counters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .counter {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .counter h3 { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .dots { display: flex; gap: 8px; margin-top: 10px; }
+    .dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.18);
+      background: transparent;
+    }
+    .dot.on.king { background: var(--king); border-color: var(--king); }
+    .dot.on.joker { background: var(--joker); border-color: var(--joker); }
+
+    .rule-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      min-height: 128px;
+      border: 1px solid rgba(243,193,74,0.18);
+    }
+    .rule-card .tag {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+    .rule-card h2 { font-size: 24px; margin-bottom: 8px; }
+    .rule-card p { color: var(--muted); line-height: 1.65; font-size: 14px; }
+    .nominate {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(243,193,74,0.12);
+      color: var(--gold-2);
+      font-weight: 800;
+      display: none;
+    }
+    .nominate.show { display: block; }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    button.btn {
+      flex: 1;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-gold { background: var(--gold); color: #2a1608; }
+    .btn-ghost {
+      background: rgba(255,255,255,0.08);
+      color: var(--ink);
+    }
+
+    .empty-deck {
+      width: 138px;
+      height: 196px;
+      border-radius: 14px;
+      border: 2px dashed rgba(255,255,255,0.18);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8,4,10,0.72);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 20;
+      padding: 16px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      width: min(520px, 100%);
+      max-height: 86dvh;
+      overflow: auto;
+      background: #160d18;
+      border: 1px solid rgba(243,193,74,0.25);
+      border-radius: 24px 24px 18px 18px;
+      padding: 18px 16px 20px;
+    }
+    .modal h2 { margin-bottom: 12px; }
+    .rule-list { display: grid; gap: 8px; }
+    .rule-row {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .rule-row b { color: var(--gold); }
+    .rule-row span { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    .setup-form { display: grid; gap: 10px; }
+    .setup-form input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: white;
+      font-size: 16px;
+    }
+    .player-pills, .regular-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+    }
+    .pill {
+      background: rgba(243,193,74,0.16);
+      color: var(--gold-2);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .pill button {
+      border: 0;
+      background: transparent;
+      color: var(--gold-2);
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .regular-btn {
+      border: 1px solid rgba(243,193,74,0.35);
+      background: transparent;
+      color: var(--gold-2);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .regular-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .note { color: var(--muted); margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
+    .remain { font-size: 12px; color: var(--muted); text-align: center; margin-top: 6px; }
+    .burst {
+      display: none;
+      gap: 8px;
+      justify-content: center;
+      align-items: stretch;
+    }
+    .burst.show { display: flex; }
+    .mini-card {
+      width: 92px;
+      height: 132px;
+      border-radius: 10px;
+      background: #fffaf2;
+      color: #1b1110;
+      border: 3px solid #ead7b0;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow);
+      animation: popIn 0.35s ease;
+    }
+    .mini-card.red { color: var(--red); }
+    .mini-card.joker {
+      background: linear-gradient(180deg, #141428, #2a1040);
+      color: var(--gold-2);
+      border-color: var(--joker);
+    }
+    .mini-card .rank { font-size: 16px; font-weight: 900; line-height: 1; }
+    .mini-card .center-suit { font-size: 32px; text-align: center; margin: auto 0; }
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.96); }
+      to { opacity: 1; transform: none; }
+    }
+    .burst-rules { display: none; gap: 8px; }
+    .burst-rules.show { display: grid; }
+    .burst-rule {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .burst-rule b { color: var(--gold); }
+    .burst-rule span { color: var(--muted); font-size: 13px; line-height: 1.45; display: block; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <small>Party Game</small>
+        <h1>King's Cup</h1>
+      </div>
+      <a class="back-link" href="games.html">ゲーム一覧</a>
+    </header>
+
+    <div class="turn-banner" id="turnBanner">
+      <div class="label">PLAYER</div>
+      <div class="name" id="turnName">フリープレイ（名前なし）</div>
+      <div class="players-row" id="playerChips"></div>
+    </div>
+
+    <div class="stage">
+      <div class="deck-wrap">
+        <div class="card" id="deckCard" role="button" tabindex="0" aria-label="山札をめくる">
+          <div class="card-inner">
+            <div class="back"></div>
+            <div class="face" id="deckFace"></div>
+          </div>
+        </div>
+        <div class="burst" id="burstWrap"></div>
+        <div class="hint" id="deckHint">山札をタップ</div>
+        <div class="remain" id="remain">残り 54 枚</div>
+      </div>
+    </div>
+
+    <div class="counters">
+      <div class="counter">
+        <h3>KING</h3>
+        <div class="dots" id="kingDots"></div>
+      </div>
+      <div class="counter">
+        <h3>JOKER</h3>
+        <div class="dots" id="jokerDots"></div>
+      </div>
+    </div>
+
+    <article class="rule-card">
+      <div id="ruleSingle">
+        <div class="tag" id="ruleTag">READY</div>
+        <h2 id="ruleTitle">山札をタップして開始</h2>
+        <p id="ruleBody">54枚（ジョーカー2枚込み）をシャッフル済み。カードの役に従って盛り上がろう。</p>
+        <div class="nominate" id="nominate"></div>
+      </div>
+      <div class="burst-rules" id="ruleBurst"></div>
+    </article>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="rulesBtn">ルール一覧</button>
+      <button class="btn btn-ghost" id="playersBtn">参加者</button>
+      <button class="btn btn-gold" id="resetBtn">リセット</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="rulesModal">
+    <div class="modal">
+      <h2>ルール一覧</h2>
+      <div class="rule-list" id="ruleList"></div>
+      <div class="actions" style="margin-top:14px">
+        <button class="btn btn-gold" id="closeRules">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay open" id="setupModal">
+    <div class="modal">
+      <h2>参加者を追加</h2>
+      <p class="note">毎回ここで名前を確認します。前回の名前は残っています。よく出る人は下から選べます。空のままでも遊べます。</p>
+      <form class="setup-form" id="setupForm">
+        <input id="playerInput" maxlength="12" placeholder="名前を入力して追加" autocomplete="off" />
+        <div class="section-label">今回の参加者</div>
+        <div class="player-pills" id="setupPills"></div>
+        <div class="section-label">よく出る人</div>
+        <div class="regular-pills" id="regularPills"></div>
+        <div class="actions">
+          <button type="submit" class="btn btn-ghost">追加</button>
+          <button type="button" class="btn btn-gold" id="startBtn">ゲーム開始</button>
+        </div>
+        <a class="back-link" href="games.html" style="display:block;text-align:center;margin-top:10px">ゲーム一覧へ戻る</a>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const PLAYERS_KEY = "kc_players";
+    const REGULARS_KEY = "kc_regulars";
+    const SUITS = [
+      { id: "S", mark: "♠", color: "black" },
+      { id: "H", mark: "♥", color: "red" },
+      { id: "D", mark: "♦", color: "red" },
+      { id: "C", mark: "♣", color: "black" }
+    ];
+    const RANKS = [
+      { n: 1, label: "A" }, { n: 2, label: "2" }, { n: 3, label: "3" },
+      { n: 4, label: "4" }, { n: 5, label: "5" }, { n: 6, label: "6" },
+      { n: 7, label: "7" }, { n: 8, label: "8" }, { n: 9, label: "9" },
+      { n: 10, label: "10" }, { n: 11, label: "J" }, { n: 12, label: "Q" }, { n: 13, label: "K" }
+    ];
+    const RULES = {
+      1: { title: "引いた人以外がグイ", body: "カードを引いた人以外が飲む。" },
+      2: { title: "指名", body: "指名された人がグイ。" },
+      3: { title: "引いた人がグイ", body: "カードを引いた人が飲む。" },
+      4: { title: "女子がグイ", body: "その場の女子が飲む。" },
+      5: { title: "左右がグイ", body: "引いた人の左右の人が飲む。" },
+      6: { title: "男子がグイ", body: "その場の男子が飲む。" },
+      7: { title: "スパイダーマン シュッ", body: "スパイダーマンのポーズでシュッ。" },
+      8: { title: "連帯責任", body: "連帯責任。対象の人も一緒に飲む。" },
+      9: { title: "好きなゲーム", body: "好きなゲームを指定して遊ぶ。" },
+      10: { title: "次の自分の番で3枚", body: "今は何もしない。次に自分の番が回ってきたとき、1タップで3枚めくる。" },
+      11: { title: "好きなルールをつくる", body: "好きなハウスルールを1つ作れる。以降破った人は飲む。" },
+      12: { title: "クエスチョンマスター", body: "このカードの持ち主の質問に答えてしまった人は飲む。次のQが出るまで有効。" },
+      13: { title: "ずんちゃか（4枚目）", body: "4枚目のキングを引いたらずんちゃか。" },
+      JOKER: { title: "ずんちゃか（2枚目）", body: "2枚目のジョーカーを引いたらずんちゃか。" }
+    };
+
+    let deck = [];
+    let kingCount = 0;
+    let jokerCount = 0;
+    let flipping = false;
+    let players = loadList(PLAYERS_KEY);
+    let regulars = loadList(REGULARS_KEY);
+    let turn = 0;
+    let tripleNames = new Set();
+    let pendingFreeTriple = false;
+    let thisTurnCount = 1;
+    let phase = "idle";
+
+    const deckCard = document.getElementById("deckCard");
+    const deckFace = document.getElementById("deckFace");
+    const remainEl = document.getElementById("remain");
+    const nominateEl = document.getElementById("nominate");
+    const deckHint = document.getElementById("deckHint");
+
+    function loadList(key) {
+      try {
+        const raw = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(raw) ? raw.filter(n => typeof n === "string" && n.trim()) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function savePlayers() {
+      localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+    }
+
+    function saveRegulars() {
+      localStorage.setItem(REGULARS_KEY, JSON.stringify(regulars));
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function buildDeck() {
+      const cards = [];
+      for (const suit of SUITS) {
+        for (const rank of RANKS) {
+          cards.push({ type: "normal", suit, rank: rank.n, label: rank.label });
+        }
+      }
+      cards.push({ type: "joker", label: "JOKER" });
+      cards.push({ type: "joker", label: "JOKER" });
+      return shuffle(cards);
+    }
+
+    function renderDots() {
+      const kings = document.getElementById("kingDots");
+      const jokers = document.getElementById("jokerDots");
+      kings.innerHTML = [0,1,2,3].map(i => `<div class="dot ${i < kingCount ? "on king" : ""}"></div>`).join("");
+      jokers.innerHTML = [0,1].map(i => `<div class="dot ${i < jokerCount ? "on joker" : ""}"></div>`).join("");
+    }
+
+    function currentPlayer() {
+      return players.length ? players[turn % players.length] : null;
+    }
+
+    function updateHint() {
+      if (deck.length === 0 && phase === "showing") {
+        deckHint.textContent = "山札切れ — リセットして再開";
+        return;
+      }
+      if (phase === "showing") {
+        deckHint.textContent = "タップで次の人へ";
+        return;
+      }
+      if (phase === "nextTurn") {
+        deckHint.textContent = thisTurnCount > 1
+          ? "タップで3枚まとめてめくる"
+          : "タップでカードをめくる";
+        return;
+      }
+      deckHint.textContent = "山札をタップ";
+    }
+
+    function renderTurn() {
+      const p = currentPlayer();
+      const tripleNote = (phase === "nextTurn" || phase === "idle") && thisTurnCount > 1
+        ? "（この番 3枚）"
+        : "";
+      document.getElementById("turnName").textContent = p ? `${p}さんの番です${tripleNote}` : "フリープレイ（名前なし）";
+      document.getElementById("playerChips").innerHTML = players.map((name, i) => {
+        const cls = i === (turn % players.length) ? "current" : "";
+        return `<span class="chip ${cls}">${escapeHtml(name)}</span>`;
+      }).join("");
+    }
+
+    function cardLabel(card) {
+      return card.type === "joker" ? "JOKER" : `${card.label}${card.suit.mark}`;
+    }
+
+    function ruleText(card) {
+      const key = card.type === "joker" ? "JOKER" : card.rank;
+      const rule = RULES[key];
+      let body = rule.body;
+      if (card.rank === 13 && kingCount >= 4) body = "4枚目のキング！ ずんちゃか。";
+      if (card.type === "joker" && jokerCount >= 2) body = "2枚目のジョーカー！ ずんちゃか。";
+      return { title: rule.title, body };
+    }
+
+    function applyCounts(card) {
+      if (card.type === "joker") jokerCount = Math.min(2, jokerCount + 1);
+      if (card.rank === 13) kingCount = Math.min(4, kingCount + 1);
+    }
+
+    function extraFor(card) {
+      const p = currentPlayer();
+      if (card.rank === 1) return p ? `${p}さん以外がグイ` : "引いた人以外がグイ";
+      if (card.rank === 3 && p) return `${p}さんがグイ`;
+      if (card.rank === 10) {
+        if (p) {
+          tripleNames.add(p);
+          return `${p}さんの次の自分の番で3枚`;
+        }
+        pendingFreeTriple = true;
+        return "次に山札をめくるとき3枚";
+      }
+      if (card.rank === 13 && kingCount >= 4) return p ? `${p}さん、ずんちゃか！` : "ずんちゃか！";
+      if (card.type === "joker" && jokerCount >= 2) return p ? `${p}さん、ずんちゃか！` : "ずんちゃか！";
+      return "";
+    }
+
+    function showSingleRule(card, extraMsg) {
+      const r = ruleText(card);
+      document.getElementById("ruleSingle").hidden = false;
+      document.getElementById("ruleBurst").classList.remove("show");
+      document.getElementById("ruleBurst").innerHTML = "";
+      document.getElementById("ruleTag").textContent = cardLabel(card);
+      document.getElementById("ruleTitle").textContent = r.title;
+      document.getElementById("ruleBody").textContent = r.body;
+      if (extraMsg) {
+        nominateEl.textContent = extraMsg;
+        nominateEl.classList.add("show");
+      } else {
+        nominateEl.classList.remove("show");
+      }
+    }
+
+    function readyRulePanel() {
+      document.getElementById("ruleSingle").hidden = false;
+      document.getElementById("ruleBurst").classList.remove("show");
+      document.getElementById("ruleBurst").innerHTML = "";
+      document.getElementById("ruleTag").textContent = "READY";
+      document.getElementById("ruleTitle").textContent = "山札をタップしてめくる";
+      document.getElementById("ruleBody").textContent = "1枚ずつ。役に従って盛り上がろう。";
+      nominateEl.classList.remove("show");
+    }
+
+    function miniHtml(card) {
+      if (card.type === "joker") {
+        return `<div class="mini-card joker"><div class="rank">JK</div><div class="center-suit">🃏</div></div>`;
+      }
+      return `<div class="mini-card ${card.suit.color}"><div class="rank">${card.label}<div class="suit">${card.suit.mark}</div></div><div class="center-suit">${card.suit.mark}</div></div>`;
+    }
+
+    function hideBurst() {
+      document.getElementById("burstWrap").classList.remove("show");
+      document.getElementById("burstWrap").innerHTML = "";
+      deckCard.style.display = "";
+      document.getElementById("ruleBurst").classList.remove("show");
+      document.getElementById("ruleBurst").innerHTML = "";
+      document.getElementById("ruleSingle").hidden = false;
+    }
+
+    function addPlayer(name) {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      if (!players.includes(trimmed)) {
+        players.push(trimmed);
+        savePlayers();
+      }
+      regulars = [trimmed, ...regulars.filter(n => n !== trimmed)].slice(0, 20);
+      saveRegulars();
+      renderSetup();
+      renderTurn();
+    }
+
+    function renderSetup() {
+      document.getElementById("setupPills").innerHTML = players.map((name, i) =>
+        `<span class="pill">${escapeHtml(name)}<button type="button" data-i="${i}">×</button></span>`
+      ).join("");
+      document.getElementById("regularPills").innerHTML = regulars.length
+        ? regulars.map(name => {
+            const inPlay = players.includes(name);
+            return `<button type="button" class="regular-btn" data-name="${escapeHtml(name)}" ${inPlay ? "disabled" : ""}>${escapeHtml(name)}</button>`;
+          }).join("")
+        : `<span class="hint">まだありません。名前を追加するとここに残ります。</span>`;
+    }
+
+    function revealCard(card) {
+      hideBurst();
+      if (card.type === "joker") {
+        deckFace.className = "face joker";
+        deckFace.innerHTML = `<div class="rank">JK</div><div class="center-suit">🃏</div><div class="rank bl">JK</div>`;
+      } else {
+        deckFace.className = `face ${card.suit.color}`;
+        deckFace.innerHTML = `<div class="rank">${card.label}<div class="suit">${card.suit.mark}</div></div><div class="center-suit">${card.suit.mark}</div><div class="rank bl">${card.label}</div>`;
+      }
+      requestAnimationFrame(() => deckCard.classList.add("flipped"));
+      setTimeout(() => {
+        applyCounts(card);
+        renderDots();
+        showSingleRule(card, extraFor(card));
+        remainEl.textContent = deck.length ? `残り ${deck.length} 枚` : "山札切れ — リセットして再開";
+        phase = "showing";
+        flipping = false;
+        updateHint();
+        renderTurn();
+      }, 720);
+    }
+
+    function drawBurst() {
+      const n = Math.min(3, deck.length);
+      const cards = [];
+      for (let i = 0; i < n; i++) cards.push(deck.pop());
+      cards.forEach(applyCounts);
+      renderDots();
+      deckCard.classList.remove("flipped");
+      deckCard.style.display = "none";
+      const burst = document.getElementById("burstWrap");
+      burst.innerHTML = cards.map(miniHtml).join("");
+      burst.classList.add("show");
+      document.getElementById("ruleSingle").hidden = true;
+      const burstRules = document.getElementById("ruleBurst");
+      burstRules.classList.add("show");
+      burstRules.innerHTML = cards.map(card => {
+        const r = ruleText(card);
+        const extra = extraFor(card);
+        return `<div class="burst-rule"><b>${cardLabel(card)} ${r.title}</b><span>${r.body}${extra ? " / " + extra : ""}</span></div>`;
+      }).join("");
+      remainEl.textContent = deck.length ? `残り ${deck.length} 枚` : "山札切れ — リセットして再開";
+      phase = "showing";
+      flipping = false;
+      updateHint();
+      renderTurn();
+    }
+
+    function draw() {
+      if (flipping || deck.length === 0) return;
+      flipping = true;
+      if (thisTurnCount > 1) {
+        hideBurst();
+        drawBurst();
+        thisTurnCount = 1;
+        return;
+      }
+      hideBurst();
+      const card = deck.pop();
+      if (deckCard.classList.contains("flipped")) {
+        deckCard.classList.remove("flipped");
+        setTimeout(() => revealCard(card), 380);
+      } else {
+        revealCard(card);
+      }
+    }
+
+    function countForUpcomingTurn() {
+      const p = currentPlayer();
+      if (p && tripleNames.has(p)) {
+        tripleNames.delete(p);
+        return 3;
+      }
+      if (!players.length && pendingFreeTriple) {
+        pendingFreeTriple = false;
+        return 3;
+      }
+      return 1;
+    }
+
+    function onDeckTap() {
+      if (flipping) return;
+      if (phase === "showing") {
+        if (deck.length === 0) return;
+        if (players.length) turn = (turn + 1) % players.length;
+        thisTurnCount = countForUpcomingTurn();
+        phase = "nextTurn";
+        hideBurst();
+        readyRulePanel();
+        if (deckCard.classList.contains("flipped")) {
+          flipping = true;
+          deckCard.classList.remove("flipped");
+          setTimeout(() => { flipping = false; }, 380);
+        }
+        renderTurn();
+        updateHint();
+        return;
+      }
+      draw();
+    }
+
+    function resetGame() {
+      deck = buildDeck();
+      kingCount = 0;
+      jokerCount = 0;
+      flipping = false;
+      tripleNames = new Set();
+      pendingFreeTriple = false;
+      thisTurnCount = 1;
+      phase = "idle";
+      turn = 0;
+      hideBurst();
+      deckCard.style.visibility = "visible";
+      deckCard.classList.remove("flipped");
+      remainEl.textContent = "残り 54 枚";
+      updateHint();
+      document.getElementById("ruleTag").textContent = "READY";
+      document.getElementById("ruleTitle").textContent = "山札をタップして開始";
+      document.getElementById("ruleBody").textContent = "54枚（ジョーカー2枚込み）をシャッフル済み。カードの役に従って盛り上がろう。";
+      nominateEl.classList.remove("show");
+      renderDots();
+      renderTurn();
+    }
+
+    document.getElementById("setupPills").addEventListener("click", (e) => {
+      if (e.target.dataset.i != null) {
+        const removed = players.splice(Number(e.target.dataset.i), 1)[0];
+        if (removed) tripleNames.delete(removed);
+        if (players.length) turn = turn % players.length;
+        else turn = 0;
+        savePlayers();
+        renderSetup();
+        renderTurn();
+      }
+    });
+
+    document.getElementById("regularPills").addEventListener("click", (e) => {
+      const name = e.target.dataset.name;
+      if (name) addPlayer(name);
+    });
+
+    document.getElementById("setupForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = document.getElementById("playerInput");
+      addPlayer(input.value);
+      input.value = "";
+    });
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      document.getElementById("setupModal").classList.remove("open");
+      resetGame();
+    });
+
+    document.getElementById("playersBtn").addEventListener("click", () => {
+      renderSetup();
+      document.getElementById("setupModal").classList.add("open");
+    });
+
+    document.querySelector(".deck-wrap").addEventListener("click", (e) => {
+      if (e.target.closest("#deckCard")) return;
+      onDeckTap();
+    });
+    deckCard.addEventListener("click", onDeckTap);
+    deckCard.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onDeckTap();
+      }
+    });
+    document.getElementById("resetBtn").addEventListener("click", resetGame);
+
+    document.getElementById("rulesBtn").addEventListener("click", () => {
+      document.getElementById("rulesModal").classList.add("open");
+    });
+    document.getElementById("closeRules").addEventListener("click", () => {
+      document.getElementById("rulesModal").classList.remove("open");
+    });
+
+    document.getElementById("ruleList").innerHTML = Object.entries(RULES).map(([k, v]) => {
+      const label = k === "JOKER" ? "JK" : (k === "1" ? "A" : k === "11" ? "J" : k === "12" ? "Q" : k === "13" ? "K" : k);
+      return `<div class="rule-row"><b>${label}</b><span><b>${v.title}</b><br>${v.body}</span></div>`;
+    }).join("");
+
+    renderSetup();
+    resetGame();
+  </script>
+</body>
+</html>

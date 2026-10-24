@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>佐藤滉真 | Portfolio</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #222222;
+      --accent: #e8ff00;
+      --text-primary: #f0f0f0;
+      --text-secondary: #888888;
+      --font: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* --- NAV --- */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 1.5rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    /* --- HERO --- */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 3rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .hero-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-name {
+      font-size: clamp(3.5rem, 8vw, 7rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-name span {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.45em;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 0.4em;
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      max-width: 480px;
+      margin-bottom: 3rem;
+      line-height: 1.8;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 2rem;
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .hero-cta:hover {
+      opacity: 0.85;
+    }
+
+    .hero-cta svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* --- SECTION BASE --- */
+    section {
+      padding: 6rem 3rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* --- ABOUT --- */
+    #about .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .about-text p {
+      color: var(--text-secondary);
+      line-height: 1.9;
+      margin-bottom: 1.2rem;
+    }
+
+    .about-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .stat {
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* --- HOBBIES --- */
+    #hobbies .hobby-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+    }
+
+    .hobby-card {
+      background: var(--surface);
+      padding: 2.5rem 2rem;
+      transition: background 0.2s;
+    }
+
+    .hobby-card:hover {
+      background: #1a1a1a;
+    }
+
+    .hobby-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .hobby-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+    }
+
+    .hobby-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* --- CONTACT --- */
+    #contact {
+      text-align: center;
+    }
+
+    #contact .section-title {
+      margin-bottom: 1rem;
+    }
+
+    #contact p {
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+    }
+
+    .contact-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .contact-link {
+      padding: 0.8rem 1.8rem;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .contact-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* --- FOOTER --- */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    footer p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+    }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { gap: 1.5rem; }
+      #hero, section { padding-left: 1.5rem; padding-right: 1.5rem; }
+      #about .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+      #hobbies .hobby-grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <span class="nav-logo">佐藤滉真</span>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#hobbies">Hobbies</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <p class="hero-label">Self Introduction</p>
+    <h1 class="hero-name">
+      佐藤滉真
+      <span>Sato Hiromasa</span>
+    </h1>
+    <p class="hero-desc">
+      はじめまして。佐藤滉真です。<br>
+      好奇心旺盛で、日々新しいことに挑戦し続けています。
+    </p>
+    <a href="#about" class="hero-cta">
+      About Me
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <p class="section-label">01 — About</p>
+    <h2 class="section-title">自己紹介</h2>
+    <div class="about-grid">
+      <div class="about-text">
+        <p>
+          佐藤滉真と申します。<br>
+          日々の生活の中で様々なことに興味を持ち、積極的に取り組んでいます。
+        </p>
+        <p>
+          人との繋がりを大切にしながら、自分自身を成長させることを
+          モットーとしています。
+        </p>
+        <p>
+          趣味を通じて得た経験や視点が、日常をより豊かにしてくれると感じています。
+        </p>
+      </div>
+      <div class="about-stats">
+        <div class="stat">
+          <div class="stat-number">∞</div>
+          <div class="stat-label">好奇心 / Curiosity</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number">24/7</div>
+          <div class="stat-label">挑戦し続ける / Always Challenging</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">誠実さ / Sincerity</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- HOBBIES -->
+  <section id="hobbies">
+    <p class="section-label">02 — Hobbies</p>
+    <h2 class="section-title">趣味</h2>
+    <div class="hobby-grid">
+      <div class="hobby-card">
+        <div class="hobby-icon">🌿</div>
+        <div class="hobby-name">観葉植物</div>
+        <div class="hobby-desc">植物を育てる喜びを日々感じています。生長を見守る時間が心の癒しになっています。</div>
+      </div>
+      <div class="hobby-card">
+        <div class="hobby-icon">🤾</div>
+        <div class="hobby-name">ハンドボール観戦</div>
+        <div class="hobby-desc">迫力あるプレーと戦略的な試合展開に魅了されています。応援する熱気がたまりません。</div>
+      </div>
+      <div class="hobby-card">
+        <div class="hobby-icon">💪</div>
+        <div class="hobby-name">筋トレ</div>
+        <div class="hobby-desc">継続することで確実に成長を実感できる筋トレが好きです。体と心を鍛えることを楽しんでいます。</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <p class="section-label">03 — Contact</p>
+    <h2 class="section-title">連絡先</h2>
+    <p>お気軽にご連絡ください。</p>
+    <div class="contact-links">
+      <a href="mailto:example@example.com" class="contact-link">Email</a>
+      <a href="#" class="contact-link">Twitter / X</a>
+      <a href="#" class="contact-link">GitHub</a>
+      <a href="#" class="contact-link">Instagram</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2026 佐藤滉真 / Sato Hiromasa</p>
+    <p>Designed with care.</p>
+  </footer>
+
+</body>
+</html>
