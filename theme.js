@@ -22,7 +22,8 @@
         "--line": "rgba(243,193,74,0.28)",
         "--on-accent": "#2a1608",
         "--chip": "rgba(255,255,255,0.08)",
-        "--dot-border": "rgba(255,255,255,0.38)"
+        "--dot-border": "rgba(255,247,234,0.7)",
+        "--dot-empty": "rgba(255,255,255,0.08)"
       }
     },
     paper: {
@@ -45,7 +46,8 @@
         "--line": "rgba(196,30,58,0.28)",
         "--on-accent": "#fff7f7",
         "--chip": "rgba(0,0,0,0.06)",
-        "--dot-border": "rgba(27,17,16,0.42)"
+        "--dot-border": "#1b1110",
+        "--dot-empty": "rgba(27,17,16,0.12)"
       }
     },
     noir: {
@@ -68,7 +70,8 @@
         "--line": "rgba(255,77,141,0.4)",
         "--on-accent": "#1a0a10",
         "--chip": "rgba(255,255,255,0.08)",
-        "--dot-border": "rgba(255,240,245,0.38)"
+        "--dot-border": "rgba(255,240,245,0.7)",
+        "--dot-empty": "rgba(255,255,255,0.08)"
       }
     },
     lime: {
@@ -91,7 +94,8 @@
         "--line": "#7a7a7a",
         "--on-accent": "#f4f7ee",
         "--chip": "rgba(0,0,0,0.06)",
-        "--dot-border": "#6a6a6a"
+        "--dot-border": "#1c1c1c",
+        "--dot-empty": "rgba(28,28,28,0.12)"
       }
     }
   };
