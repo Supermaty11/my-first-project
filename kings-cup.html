@@ -22,6 +22,7 @@
       --line: rgba(243,193,74,0.28);
       --on-accent: #2a1608;
       --chip: rgba(255,255,255,0.08);
+      --dot-border: rgba(255,255,255,0.35);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -199,7 +200,7 @@
       background: var(--surface);
       border-radius: 16px;
       padding: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--line);
     }
     .counter h3 { font-size: 12px; color: var(--muted); font-weight: 700; }
     .dots { display: flex; gap: 8px; margin-top: 10px; }
@@ -207,7 +208,7 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.18);
+      border: 2px solid var(--dot-border);
       background: transparent;
     }
     .dot.on.king { background: var(--king); border-color: var(--king); }
