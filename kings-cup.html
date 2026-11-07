@@ -22,8 +22,10 @@
       --line: rgba(243,193,74,0.28);
       --on-accent: #2a1608;
       --chip: rgba(255,255,255,0.08);
-      --dot-border: rgba(255,255,255,0.55);
-      --dot-empty: rgba(255,255,255,0.08);
+      --dot-border: rgba(255,247,234,0.55);
+      --dot-empty: rgba(255,255,255,0.06);
+      --card-a: #5b1630;
+      --card-b: #3d1022;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -149,7 +151,7 @@
     }
     .back {
       background:
-        repeating-linear-gradient(45deg, #5b1630 0 8px, #3d1022 8px 16px);
+        repeating-linear-gradient(45deg, var(--card-a) 0 8px, var(--card-b) 8px 16px);
       border: 3px solid var(--gold);
     }
     .back::after {
@@ -206,10 +208,10 @@
     .counter h3 { font-size: 12px; color: var(--muted); font-weight: 700; }
     .dots { display: flex; gap: 8px; margin-top: 10px; }
     .dot {
-      width: 22px;
-      height: 22px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      border: 3px solid var(--dot-border);
+      border: 2px solid var(--dot-border);
       background: var(--dot-empty);
     }
     .dot.on.king { background: var(--king); border-color: var(--king); }

@@ -22,8 +22,10 @@
         "--line": "rgba(243,193,74,0.28)",
         "--on-accent": "#2a1608",
         "--chip": "rgba(255,255,255,0.08)",
-        "--dot-border": "rgba(255,247,234,0.7)",
-        "--dot-empty": "rgba(255,255,255,0.08)"
+        "--dot-border": "rgba(255,247,234,0.55)",
+        "--dot-empty": "rgba(255,255,255,0.06)",
+        "--card-a": "#5b1630",
+        "--card-b": "#3d1022"
       }
     },
     paper: {
@@ -46,8 +48,10 @@
         "--line": "rgba(196,30,58,0.28)",
         "--on-accent": "#fff7f7",
         "--chip": "rgba(0,0,0,0.06)",
-        "--dot-border": "#1b1110",
-        "--dot-empty": "rgba(27,17,16,0.12)"
+        "--dot-border": "#5a4a46",
+        "--dot-empty": "transparent",
+        "--card-a": "#8b1e32",
+        "--card-b": "#5c1422"
       }
     },
     noir: {
@@ -70,8 +74,10 @@
         "--line": "rgba(255,77,141,0.4)",
         "--on-accent": "#1a0a10",
         "--chip": "rgba(255,255,255,0.08)",
-        "--dot-border": "rgba(255,240,245,0.7)",
-        "--dot-empty": "rgba(255,255,255,0.08)"
+        "--dot-border": "rgba(255,240,245,0.5)",
+        "--dot-empty": "rgba(255,255,255,0.06)",
+        "--card-a": "#3a1528",
+        "--card-b": "#1a0c14"
       }
     },
     lime: {
@@ -94,8 +100,10 @@
         "--line": "#7a7a7a",
         "--on-accent": "#f4f7ee",
         "--chip": "rgba(0,0,0,0.06)",
-        "--dot-border": "#1c1c1c",
-        "--dot-empty": "rgba(28,28,28,0.12)"
+        "--dot-border": "#6e6e6e",
+        "--dot-empty": "transparent",
+        "--card-a": "#4a5244",
+        "--card-b": "#353a32"
       }
     }
   };
