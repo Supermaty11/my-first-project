@@ -65,13 +65,15 @@
       width: 100%;
       text-align: left;
       font-family: inherit;
-      cursor: pointer;
     }
+    a.card, .menu-btn { cursor: pointer; }
     a.card:active, .menu-btn:active { transform: scale(0.99); }
     .card.soon {
-      opacity: 0.55;
+      opacity: 0.45;
       border-style: dashed;
       cursor: default;
+      pointer-events: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .tag {
       font-size: 11px;
@@ -155,18 +157,18 @@
     <section class="view on" id="viewGames">
       <div class="brand"><small>Party Games</small></div>
       <h1>ゲームを選ぶ</h1>
-      <p class="lead">キングスカップと飲み会すごろくを遊べます。</p>
+      <p class="lead">キングスカップから開始できます。すごろくは開発中です。</p>
       <div class="list">
         <a class="card" href="kings-cup.html">
           <div class="tag">PLAY</div>
           <h2>King's Cup</h2>
           <p>トランプをめくって役に従う飲み会ゲーム。54枚＋ジョーカー。</p>
         </a>
-        <a class="card" href="sugoroku.html">
-          <div class="tag">PLAY</div>
+        <div class="card soon" aria-disabled="true">
+          <div class="tag">準備中</div>
           <h2>飲み会すごろく</h2>
           <p>ルーレットの目だけ進んで、止まったマスの指示に従う。</p>
-        </a>
+        </div>
         <div class="card soon" aria-disabled="true">
           <div class="tag">準備中</div>
           <h2>次のゲーム</h2>
