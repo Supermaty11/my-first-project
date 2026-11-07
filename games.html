@@ -14,14 +14,19 @@
       --ink: #fff7ea;
       --muted: #c9b8a4;
       --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+      --glow-1: #3a1533;
+      --glow-2: #1d2a4a;
+      --line: rgba(243,193,74,0.28);
+      --chip: rgba(255,255,255,0.08);
+      --on-accent: #2a1608;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(1200px 600px at 10% -10%, #3a1533 0%, transparent 50%),
-        radial-gradient(900px 500px at 110% 10%, #1d2a4a 0%, transparent 46%),
+        radial-gradient(1200px 600px at 10% -10%, var(--glow-1) 0%, transparent 50%),
+        radial-gradient(900px 500px at 110% 10%, var(--glow-2) 0%, transparent 46%),
         linear-gradient(180deg, var(--bg), var(--bg-2));
       min-height: 100dvh;
     }
@@ -47,18 +52,22 @@
       line-height: 1.6;
       margin-bottom: 22px;
     }
-    .list { display: grid; gap: 12px; }
-    a.card, .card.soon {
+    .list, .menu { display: grid; gap: 12px; }
+    a.card, .card.soon, .menu-btn {
       display: block;
       text-decoration: none;
       color: inherit;
       background: var(--surface);
-      border: 1px solid rgba(243,193,74,0.22);
+      border: 1px solid var(--line);
       border-radius: 20px;
       padding: 18px 16px;
       box-shadow: var(--shadow);
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
     }
-    a.card:active { transform: scale(0.99); }
+    a.card:active, .menu-btn:active { transform: scale(0.99); }
     .card.soon {
       opacity: 0.55;
       border-style: dashed;
@@ -70,27 +79,157 @@
       color: var(--gold);
       margin-bottom: 6px;
     }
-    .card h2 { font-size: 20px; margin-bottom: 6px; }
-    .card p { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .card h2, .menu-btn h2 { font-size: 20px; margin-bottom: 6px; font-weight: 800; }
+    .card p, .menu-btn p { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .back {
+      border: 0;
+      background: var(--chip);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-family: inherit;
+      cursor: pointer;
+      margin-bottom: 14px;
+    }
+    .view { display: none; }
+    .view.on { display: block; }
+    .theme-picks { display: grid; gap: 8px; }
+    .theme-pick {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .theme-pick.on {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 1px var(--gold);
+    }
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid;
+      flex-shrink: 0;
+    }
+    .tabbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    .tab {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      border-radius: 14px;
+      padding: 14px 10px;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tab.on {
+      background: var(--gold);
+      color: var(--on-accent);
+      border-color: var(--gold);
+    }
   </style>
+  <script src="theme.js"></script>
 </head>
 <body>
   <div class="app">
-    <div class="brand"><small>Party Games</small></div>
-    <h1>ゲームを選ぶ</h1>
-    <p class="lead">キングスカップから開始できます。ほかのゲームは準備中です。</p>
-    <div class="list">
-      <a class="card" href="kings-cup.html">
-        <div class="tag">PLAY</div>
-        <h2>King's Cup</h2>
-        <p>トランプをめくって役に従う飲み会ゲーム。54枚＋ジョーカー。</p>
-      </a>
-      <div class="card soon" aria-disabled="true">
-        <div class="tag">準備中</div>
-        <h2>次のゲーム</h2>
-        <p>追加時はここの一覧に並びます。キングスカップのファイルは分けてあります。</p>
+    <section class="view on" id="viewGames">
+      <div class="brand"><small>Party Games</small></div>
+      <h1>ゲームを選ぶ</h1>
+      <p class="lead">キングスカップと飲み会すごろくを遊べます。</p>
+      <div class="list">
+        <a class="card" href="kings-cup.html">
+          <div class="tag">PLAY</div>
+          <h2>King's Cup</h2>
+          <p>トランプをめくって役に従う飲み会ゲーム。54枚＋ジョーカー。</p>
+        </a>
+        <a class="card" href="sugoroku.html">
+          <div class="tag">PLAY</div>
+          <h2>飲み会すごろく</h2>
+          <p>ルーレットの目だけ進んで、止まったマスの指示に従う。</p>
+        </a>
+        <div class="card soon" aria-disabled="true">
+          <div class="tag">準備中</div>
+          <h2>次のゲーム</h2>
+          <p>追加時はここの一覧に並びます。キングスカップのファイルは分けてあります。</p>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <section class="view" id="viewSettings" hidden>
+      <div class="brand"><small>Party Games</small></div>
+      <h1>設定</h1>
+      <p class="lead">変えたい項目を選んでください。あとから項目を足せます。</p>
+      <div class="menu">
+        <button type="button" class="menu-btn" data-go="theme">
+          <div class="tag">THEME</div>
+          <h2>テーマの変更</h2>
+          <p>アプリの色の組み合わせを選びます。</p>
+        </button>
+      </div>
+    </section>
+
+    <section class="view" id="viewTheme" hidden>
+      <button type="button" class="back" data-go="settings">設定へ戻る</button>
+      <div class="brand"><small>設定</small></div>
+      <h1>テーマの変更</h1>
+      <p class="lead">使いたい色を選んでください。この端末に残ります。</p>
+      <div class="theme-picks" id="themePicks"></div>
+    </section>
+
+    <nav class="tabbar" aria-label="画面切替">
+      <button type="button" class="tab on" id="tabGames" data-go="games">ゲーム</button>
+      <button type="button" class="tab" id="tabSettings" data-go="settings">設定</button>
+    </nav>
   </div>
+
+  <script>
+    (function () {
+      var views = {
+        games: document.getElementById("viewGames"),
+        settings: document.getElementById("viewSettings"),
+        theme: document.getElementById("viewTheme")
+      };
+      var tabGames = document.getElementById("tabGames");
+      var tabSettings = document.getElementById("tabSettings");
+      var themePicks = document.getElementById("themePicks");
+
+      function show(name) {
+        Object.keys(views).forEach(function (key) {
+          var on = key === name;
+          views[key].classList.toggle("on", on);
+          views[key].hidden = !on;
+        });
+        tabGames.classList.toggle("on", name === "games");
+        tabSettings.classList.toggle("on", name === "settings" || name === "theme");
+        if (name === "theme") PGTheme.renderSettings(themePicks);
+      }
+
+      document.querySelectorAll("[data-go]").forEach(function (el) {
+        el.addEventListener("click", function () {
+          show(el.getAttribute("data-go"));
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

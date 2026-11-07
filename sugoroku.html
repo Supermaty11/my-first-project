@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>飲み会すごろく</title>
+  <style>
+    :root {
+      --ink: #fff;
+      --muted: #b7b7c4;
+      --line: rgba(255, 255, 255, 0.14);
+      --cyan: #2ad8ff;
+      --gold: #e6c56a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    button, input { font-family: inherit; }
+    body {
+      min-height: 100dvh;
+      color: var(--ink);
+      background: #000;
+      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+    }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; }
+
+    .setup {
+      min-height: 100dvh;
+      background: #12121c;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 8px 16px calc(96px + env(safe-area-inset-bottom));
+    }
+    .setup-head {
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      align-items: center;
+      min-height: 52px;
+    }
+    .setup-head h1 {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .close {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      text-decoration: none;
+      font-size: 32px;
+      line-height: 1;
+      font-weight: 300;
+    }
+    .players, .history { display: grid; gap: 12px; }
+    .player {
+      position: relative;
+      background: #23232e;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 14px 44px 14px 18px;
+      overflow: hidden;
+    }
+    .player .bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: var(--c);
+    }
+    .color-label {
+      display: block;
+      color: var(--c);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .player input {
+      width: 100%;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+      color: #fff;
+      font-size: 16px;
+      padding: 6px 0 8px;
+      outline: none;
+    }
+    .player input::placeholder { color: #8d8d9a; }
+    .row-x, .hist-x {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      border: 0;
+      background: transparent;
+      color: #d7d7e0;
+      font-size: 22px;
+    }
+    .add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 22px auto 28px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(255, 255, 255, 0.75);
+      background: transparent;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .add-icon {
+      width: 22px;
+      height: 22px;
+      border: 1.5px solid #fff;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .hist-title {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .hist {
+      position: relative;
+      background: #23232e;
+      border-radius: 12px;
+    }
+    .hist-name {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 0;
+      color: #fff;
+      font-size: 16px;
+      padding: 16px 44px 16px 16px;
+    }
+    .empty-hist { color: var(--muted); font-size: 13px; }
+    .go {
+      position: fixed;
+      left: 50%;
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(448px, calc(100% - 24px));
+      height: 54px;
+      border: 0;
+      border-radius: 12px;
+      background: #fff;
+      color: #161616;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .play {
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: calc(10px + env(safe-area-inset-top)) 16px 6px;
+    }
+    .turn {
+      font-size: clamp(22px, 4vw, 34px);
+      font-weight: 900;
+      line-height: 1.15;
+      word-break: break-all;
+    }
+    .remain {
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: transparent;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .burger, .burger::before, .burger::after {
+      display: block;
+      width: 16px;
+      height: 2px;
+      background: #fff;
+      position: relative;
+    }
+    .burger::before, .burger::after {
+      content: "";
+      position: absolute;
+      left: 0;
+    }
+    .burger::before { top: -6px; }
+    .burger::after { top: 6px; }
+
+    .stage {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 8px 12px 16px;
+    }
+    .stage.dim .board-wrap { filter: brightness(0.28); }
+    .board-wrap {
+      width: min(96%, calc((100dvh - 92px) * 2.45));
+      aspect-ratio: 8 / 3.25;
+      max-height: 100%;
+    }
+    .board {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+    }
+    .cell { position: relative; display: grid; place-items: center; }
+    .cell.h::before,
+    .cell.v::after {
+      content: "";
+      position: absolute;
+      background: var(--cyan);
+      box-shadow: 0 0 10px rgba(42, 216, 255, 0.85);
+      z-index: 0;
+    }
+    .cell.h::before {
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 8px;
+      margin-top: -4px;
+    }
+    .cell.v::after {
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 8px;
+      margin-left: -4px;
+    }
+    .tile {
+      position: relative;
+      z-index: 1;
+      width: 76%;
+      height: 84%;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+    }
+    .tile-card { background: #fffef8; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35); }
+    .tile-start {
+      background: linear-gradient(180deg, #49adff, #1d74e8);
+      box-shadow: 0 0 22px rgba(40, 150, 255, 0.85);
+    }
+    .tile-skip { background: linear-gradient(180deg, #ee63f6, #c026d3); }
+    .tile-drink { background: linear-gradient(145deg, #7c4dff, #5a63f5 42%, #3ec4ff); }
+    .tile-goal {
+      background: linear-gradient(180deg, #ff5d4e, #e10600);
+      box-shadow: 0 0 24px rgba(255, 40, 30, 0.9);
+    }
+    .tile-label {
+      color: #fff;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.25;
+      letter-spacing: 0.04em;
+      font-size: clamp(9px, 1.35vw, 16px);
+      padding: 4px;
+    }
+    .tile-label.big {
+      font-size: clamp(13px, 2vw, 26px);
+      letter-spacing: 0.12em;
+    }
+    .ornament { width: 88%; height: 90%; display: block; }
+    .tokens {
+      position: absolute;
+      left: 50%;
+      bottom: 7%;
+      transform: translateX(-50%);
+      display: flex;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .token {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      background: var(--c);
+      color: var(--inkc);
+    }
+    .token + .token { margin-left: -8px; }
+    .token.me { box-shadow: 0 0 0 2px #fff, 0 0 12px var(--c); }
+    .token.hop { animation: hop 0.28s ease; }
+    @keyframes hop {
+      0% { transform: translateY(0); }
+      45% { transform: translateY(-12px); }
+      100% { transform: translateY(0); }
+    }
+
+    .wheel-layer {
+      position: absolute;
+      right: max(12px, 2vw);
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 4;
+    }
+    .step {
+      color: #fff;
+      font-weight: 900;
+      font-size: clamp(18px, 2.6vw, 30px);
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85);
+      white-space: nowrap;
+    }
+    .step b { font-size: 1.25em; font-weight: 900; }
+    .wheel-btn {
+      position: relative;
+      width: min(38vh, 340px);
+      border: 0;
+      padding: 0;
+      background: transparent;
+      filter: drop-shadow(0 0 16px rgba(255, 45, 100, 0.55));
+    }
+    .wheel-svg { width: 100%; height: auto; display: block; transform-origin: 50% 50%; }
+    .wheel-svg.spin { transition: transform 3.1s cubic-bezier(0.13, 0.72, 0.12, 1); }
+    .pointer {
+      position: absolute;
+      left: -4px;
+      top: 50%;
+      width: 26px;
+      height: 34px;
+      transform: translateY(-50%);
+      z-index: 2;
+      background: radial-gradient(circle at 35% 35%, #fff1c2, #e6c56a 55%, #a67c2d);
+      clip-path: polygon(100% 50%, 0 6%, 18% 50%, 0 94%);
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
+      pointer-events: none;
+    }
+    .hub {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 15%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #5a4630, #140e0a 72%);
+      border: 3px solid var(--gold);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .wheel-cta {
+      position: absolute;
+      inset: 18% 8%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: clamp(15px, 2vw, 22px);
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.35;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      background: rgba(0, 0, 0, 0.62);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 16px;
+    }
+    .big-card {
+      width: min(250px, 42vw);
+      aspect-ratio: 5 / 7;
+      perspective: 1200px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+    }
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.55s ease;
+    }
+    .big-card.flipped .flip-inner { transform: rotateY(180deg); }
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      background: #fffef8;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .face.front { transform: rotateY(180deg); }
+    .face .ornament { position: absolute; inset: 6%; width: auto; height: auto; }
+    .card-copy {
+      position: relative;
+      z-index: 1;
+      color: #1c140c;
+      text-align: center;
+      padding: 18px;
+    }
+    .card-copy small {
+      display: block;
+      color: #8a7040;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .card-copy h2 { font-size: 26px; line-height: 1.3; margin-bottom: 10px; }
+    .card-copy p { font-size: 14px; line-height: 1.6; color: #3a3128; }
+    .card-side { width: min(220px, 36vw); text-align: left; }
+    .card-hint {
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: 900;
+      line-height: 1.45;
+    }
+    .panel {
+      width: min(420px, 100%);
+      background: #16161f;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 28px 22px 22px;
+      text-align: center;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+    .panel h2 { font-size: 28px; line-height: 1.35; margin-bottom: 8px; }
+    .panel p { color: var(--muted); font-size: 15px; line-height: 1.6; }
+    .next-btn, .ghost-btn {
+      display: block;
+      width: 100%;
+      margin-top: 18px;
+      height: 50px;
+      border-radius: 12px;
+      border: 0;
+      background: #fff;
+      color: #161616;
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+      line-height: 50px;
+      text-align: center;
+    }
+    .ghost-btn {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    .menu-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: rgba(0, 0, 0, 0.72);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+    .menu-card {
+      width: min(420px, 100%);
+      background: #16161f;
+      border-radius: 20px;
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+    }
+    .menu-card button, .menu-card a {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #23232e;
+      color: #fff;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .rules {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      padding: 0 4px 4px;
+      font-weight: 500;
+    }
+    @media (max-width: 800px) {
+      .wheel-layer {
+        right: auto;
+        left: 50%;
+        top: auto;
+        bottom: 8px;
+        transform: translateX(-50%);
+        flex-direction: column-reverse;
+        gap: 8px;
+      }
+      .wheel-btn { width: min(46vw, 240px); }
+      .card-side { width: auto; text-align: center; }
+      .overlay { flex-direction: column; gap: 16px; }
+      .big-card { width: min(220px, 58vw); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .wheel-svg.spin { transition-duration: 0.35s; }
+      .token.hop, .flip-inner { animation: none; transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="frame" viewBox="0 0 100 140">
+      <rect x="8" y="8" width="84" height="124" fill="none" stroke="#c6a35a" stroke-width="1.4"/>
+      <g fill="none" stroke="#c6a35a" stroke-width="1.15" stroke-linecap="round">
+        <path d="M16 42c0-14 8-22 24-26"/>
+        <path d="M16 34c8-10 16-14 26-16"/>
+        <path d="M22 42c2-8 8-14 16-16"/>
+      </g>
+      <g fill="none" stroke="#c6a35a" stroke-width="1.15" stroke-linecap="round" transform="translate(100,0) scale(-1,1)">
+        <path d="M16 42c0-14 8-22 24-26"/>
+        <path d="M16 34c8-10 16-14 26-16"/>
+        <path d="M22 42c2-8 8-14 16-16"/>
+      </g>
+      <g fill="none" stroke="#c6a35a" stroke-width="1.15" stroke-linecap="round" transform="translate(0,140) scale(1,-1)">
+        <path d="M16 42c0-14 8-22 24-26"/>
+        <path d="M16 34c8-10 16-14 26-16"/>
+        <path d="M22 42c2-8 8-14 16-16"/>
+      </g>
+      <g fill="none" stroke="#c6a35a" stroke-width="1.15" stroke-linecap="round" transform="translate(100,140) scale(-1,-1)">
+        <path d="M16 42c0-14 8-22 24-26"/>
+        <path d="M16 34c8-10 16-14 26-16"/>
+        <path d="M22 42c2-8 8-14 16-16"/>
+      </g>
+    </symbol>
+  </svg>
+
+  <div class="setup" id="setup">
+    <header class="setup-head">
+      <a class="close" href="games.html" aria-label="閉じる">×</a>
+      <h1>参加メンバー</h1>
+      <span></span>
+    </header>
+    <div class="players" id="playerList"></div>
+    <button type="button" class="add" id="addBtn"><span class="add-icon">+</span>追加</button>
+    <p class="hist-title">履歴</p>
+    <div class="history" id="historyList"></div>
+    <button type="button" class="go" id="startBtn">つぎへ</button>
+  </div>
+
+  <div class="play" id="play" hidden>
+    <header class="hud">
+      <div>
+        <div class="turn" id="turnLabel" aria-live="polite"></div>
+        <div class="remain" id="remainLabel"></div>
+      </div>
+      <button type="button" class="icon-btn" id="menuBtn" aria-label="メニュー"><span class="burger"></span></button>
+    </header>
+    <div class="stage" id="stage">
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+      </div>
+      <div class="wheel-layer" id="wheelLayer" hidden>
+        <div class="step"><b id="stepNum">—</b> マス進む</div>
+        <button type="button" class="wheel-btn" id="wheelBtn" aria-label="ルーレットを回す">
+          <span class="pointer" aria-hidden="true"></span>
+          <svg class="wheel-svg spin" id="wheelSvg" viewBox="0 0 400 400"></svg>
+          <span class="hub" aria-hidden="true"></span>
+          <span class="wheel-cta" id="wheelCta">タップしてください</span>
+        </button>
+      </div>
+      <div class="overlay" id="overlay" hidden></div>
+    </div>
+  </div>
+
+  <div class="menu-layer" id="menuLayer" hidden>
+    <div class="menu-card">
+      <button type="button" id="rulesBtn">ルール</button>
+      <p class="rules" id="rulesText" hidden>ルーレットは1〜5。出た目だけ進みます。ゴールは残りマスと同じ目のときだけ止まり、大きい目は進みません。白カードはタップで裏返します。指示の文言はあとから入ります。「無条件で1杯飲む」に止まった人は1杯。「スキップ」に止まると、次の自分の番を1回休みます。</p>
+      <button type="button" id="restartBtn">最初から</button>
+      <a href="games.html">ゲーム選択に戻る</a>
+      <button type="button" id="menuClose">閉じる</button>
+    </div>
+  </div>
+
+  <script>
+    var COLORS = [
+      { label: "赤", hex: "#ff3b6a", ink: "#fff" },
+      { label: "青", hex: "#2f89ff", ink: "#fff" },
+      { label: "緑", hex: "#22c55e", ink: "#062816" },
+      { label: "黄", hex: "#f5c542", ink: "#2a2108" },
+      { label: "オレンジ", hex: "#ff8a2a", ink: "#2a1404" },
+      { label: "紫", hex: "#b44dff", ink: "#fff" }
+    ];
+    var GOAL = 23;
+    var HIST_KEY = "sg_history";
+    var WHEEL_NUMS = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
+    var WHEEL_COLORS = { 1: "#e53935", 2: "#43a047", 3: "#1e88e5", 4: "#fb8c00", 5: "#8e24aa" };
+    var CARD_SPACES = [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22];
+    var CARD_TEXTS = CARD_SPACES.map(function () {
+      return { title: "指示未設定", body: "このカードの指示はあとから入ります。" };
+    });
+    var SPACE_DEFS = [
+      { row: 2, col: 0, type: "start" },
+      { row: 2, col: 1, type: "card" },
+      { row: 2, col: 2, type: "card" },
+      { row: 2, col: 3, type: "card" },
+      { row: 2, col: 4, type: "card" },
+      { row: 2, col: 5, type: "card" },
+      { row: 2, col: 6, type: "card" },
+      { row: 2, col: 7, type: "skip" },
+      { row: 1, col: 7, type: "card" },
+      { row: 0, col: 7, type: "drink" },
+      { row: 0, col: 6, type: "card" },
+      { row: 0, col: 5, type: "card" },
+      { row: 0, col: 4, type: "card" },
+      { row: 0, col: 3, type: "card" },
+      { row: 0, col: 2, type: "card" },
+      { row: 0, col: 1, type: "card" },
+      { row: 0, col: 0, type: "drink" },
+      { row: 1, col: 0, type: "card" },
+      { row: 1, col: 1, type: "card" },
+      { row: 1, col: 2, type: "card" },
+      { row: 1, col: 3, type: "card" },
+      { row: 1, col: 4, type: "card" },
+      { row: 1, col: 5, type: "card" },
+      { row: 1, col: 6, type: "goal" }
+    ];
+
+    var cardCursor = 0;
+    var SPACES = SPACE_DEFS.map(function (def) {
+      var space = { row: def.row, col: def.col, type: def.type, cardIndex: -1 };
+      if (def.type === "card") space.cardIndex = cardCursor++;
+      return space;
+    });
+
+    var rows = [
+      { colorIndex: 0, name: "" },
+      { colorIndex: 1, name: "" }
+    ];
+    var players = [];
+    var turn = 0;
+    var phase = "setup";
+    var life = 0;
+    var spinToken = 0;
+    var rotation = 0;
+    var hopping = -1;
+
+    var playerList = document.getElementById("playerList");
+    var historyList = document.getElementById("historyList");
+    var addBtn = document.getElementById("addBtn");
+    var setupEl = document.getElementById("setup");
+    var playEl = document.getElementById("play");
+    var boardEl = document.getElementById("board");
+    var stageEl = document.getElementById("stage");
+    var turnLabel = document.getElementById("turnLabel");
+    var remainLabel = document.getElementById("remainLabel");
+    var wheelLayer = document.getElementById("wheelLayer");
+    var wheelSvg = document.getElementById("wheelSvg");
+    var wheelBtn = document.getElementById("wheelBtn");
+    var wheelCta = document.getElementById("wheelCta");
+    var stepNum = document.getElementById("stepNum");
+    var overlay = document.getElementById("overlay");
+    var menuLayer = document.getElementById("menuLayer");
+    var rulesText = document.getElementById("rulesText");
+
+    function loadHistory() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+        return Array.isArray(raw) ? raw.filter(function (n) { return typeof n === "string" && n; }) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    function saveHistory(list) {
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 30))); } catch (e) {}
+    }
+    function remember(names) {
+      var merged = [];
+      names.concat(loadHistory()).forEach(function (name) {
+        if (name && merged.indexOf(name) === -1) merged.push(name);
+      });
+      saveHistory(merged);
+    }
+    function initial(name) {
+      var chars = Array.from(name);
+      return chars[0] || "？";
+    }
+    function wait(ms) {
+      return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
+    function reduceMotion() {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    function renderRows() {
+      playerList.innerHTML = "";
+      rows.forEach(function (row, index) {
+        var color = COLORS[row.colorIndex];
+        var card = document.createElement("div");
+        card.className = "player";
+        card.style.setProperty("--c", color.hex);
+        card.innerHTML =
+          '<span class="bar"></span>' +
+          '<span class="color-label">プレイヤーカラー：' + color.label + '</span>' +
+          '<input maxlength="16" placeholder="プレイヤー名を入力..." value="" />' +
+          (rows.length > 1 ? '<button type="button" class="row-x" aria-label="この人を外す">×</button>' : "");
+        var input = card.querySelector("input");
+        input.value = row.name;
+        input.addEventListener("input", function () { row.name = input.value; });
+        var remove = card.querySelector(".row-x");
+        if (remove) {
+          remove.addEventListener("click", function () {
+            rows.splice(index, 1);
+            renderRows();
+          });
+        }
+        playerList.appendChild(card);
+      });
+      addBtn.hidden = rows.length >= COLORS.length;
+    }
+
+    function renderHistory() {
+      var list = loadHistory();
+      historyList.innerHTML = "";
+      if (!list.length) {
+        historyList.innerHTML = '<p class="empty-hist">まだありません</p>';
+        return;
+      }
+      list.forEach(function (name) {
+        var item = document.createElement("div");
+        item.className = "hist";
+        item.innerHTML =
+          '<button type="button" class="hist-name"></button>' +
+          '<button type="button" class="hist-x" aria-label="履歴から削除">×</button>';
+        item.querySelector(".hist-name").textContent = name;
+        item.querySelector(".hist-name").addEventListener("click", function () {
+          var empty = rows.find(function (row) { return !row.name.trim(); });
+          if (empty) {
+            empty.name = name;
+          } else if (rows.length < COLORS.length) {
+            var used = rows.map(function (row) { return row.colorIndex; });
+            var colorIndex = 0;
+            while (used.indexOf(colorIndex) !== -1) colorIndex++;
+            rows.push({ colorIndex: colorIndex, name: name });
+          }
+          renderRows();
+        });
+        item.querySelector(".hist-x").addEventListener("click", function () {
+          saveHistory(loadHistory().filter(function (n) { return n !== name; }));
+          renderHistory();
+        });
+        historyList.appendChild(item);
+      });
+    }
+
+    function tileMarkup(space) {
+      if (space.type === "start") return '<div class="tile-label big">START</div>';
+      if (space.type === "skip") return '<div class="tile-label">スキップ</div>';
+      if (space.type === "goal") return '<div class="tile-label big">GOAL</div>';
+      if (space.type === "drink") return '<div class="tile-label">無条件で<br>1杯飲む</div>';
+      return '<svg class="ornament" viewBox="0 0 100 140"><use href="#frame"/></svg>';
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      SPACES.forEach(function (space, index) {
+        var cell = document.createElement("div");
+        cell.className = "cell h" + ((space.col === 7 || (space.col === 0 && space.row < 2)) ? " v" : "");
+        cell.style.gridColumn = String(space.col + 1);
+        cell.style.gridRow = String(space.row + 1);
+        var tile = document.createElement("div");
+        tile.className = "tile tile-" + space.type;
+        tile.dataset.pos = String(index);
+        tile.innerHTML = tileMarkup(space) + '<div class="tokens"></div>';
+        cell.appendChild(tile);
+        boardEl.appendChild(cell);
+      });
+      renderTokens();
+    }
+
+    function renderTokens() {
+      document.querySelectorAll(".tokens").forEach(function (box) { box.innerHTML = ""; });
+      players.forEach(function (player, index) {
+        var tile = boardEl.querySelector('.tile[data-pos="' + player.pos + '"] .tokens');
+        if (!tile) return;
+        var color = COLORS[player.colorIndex];
+        var token = document.createElement("span");
+        token.className = "token" + (index === turn ? " me" : "") + (index === hopping ? " hop" : "");
+        token.style.setProperty("--c", color.hex);
+        token.style.setProperty("--inkc", color.ink);
+        token.textContent = initial(player.name);
+        token.title = player.name;
+        tile.appendChild(token);
+      });
+    }
+
+    function renderHud() {
+      var player = players[turn];
+      var color = COLORS[player.colorIndex];
+      turnLabel.textContent = player.name + "のターン";
+      turnLabel.style.color = color.hex;
+      remainLabel.textContent = "ゴールまで残り " + (GOAL - player.pos) + "マス";
+    }
+
+    function closeOverlay() {
+      overlay.hidden = true;
+      overlay.innerHTML = "";
+    }
+    function showWheel() {
+      phase = "spin";
+      stepNum.textContent = "—";
+      wheelCta.hidden = false;
+      wheelBtn.disabled = false;
+      wheelLayer.hidden = false;
+      stageEl.classList.add("dim");
+    }
+    function hideWheel() {
+      wheelLayer.hidden = true;
+      stageEl.classList.remove("dim");
+    }
+    function panel(title, body, label, onNext) {
+      phase = "effect";
+      hideWheel();
+      overlay.hidden = false;
+      overlay.innerHTML =
+        '<div class="panel"><h2></h2><p></p><button type="button" class="next-btn"></button></div>';
+      overlay.querySelector("h2").textContent = title;
+      overlay.querySelector("p").textContent = body;
+      overlay.querySelector("button").textContent = label;
+      overlay.querySelector("button").addEventListener("click", onNext);
+    }
+    function showCard(cardIndex) {
+      var card = CARD_TEXTS[cardIndex];
+      phase = "card";
+      hideWheel();
+      overlay.hidden = false;
+      overlay.innerHTML =
+        '<button type="button" class="big-card" aria-label="カードを開く">' +
+          '<span class="flip-inner">' +
+            '<span class="face back"><svg class="ornament" viewBox="0 0 100 140"><use href="#frame"/></svg></span>' +
+            '<span class="face front"><svg class="ornament" viewBox="0 0 100 140"><use href="#frame"/></svg>' +
+              '<span class="card-copy"><small></small><h2></h2><p></p></span></span>' +
+          '</span></button>' +
+        '<div class="card-side"><p class="card-hint">カードを<br>タップしてください</p>' +
+          '<button type="button" class="next-btn" hidden>つぎの人へ</button></div>';
+      var copy = overlay.querySelector(".card-copy");
+      copy.querySelector("small").textContent = (cardIndex + 1) + "枚目";
+      copy.querySelector("h2").textContent = card.title;
+      copy.querySelector("p").textContent = card.body;
+      var big = overlay.querySelector(".big-card");
+      var next = overlay.querySelector(".next-btn");
+      big.addEventListener("click", function () {
+        if (big.classList.contains("flipped")) return;
+        big.classList.add("flipped");
+        overlay.querySelector(".card-hint").hidden = true;
+        next.hidden = false;
+      });
+      next.addEventListener("click", nextPlayer);
+    }
+
+    function beginTurn() {
+      var player = players[turn];
+      renderHud();
+      renderTokens();
+      if (player.skipNext) {
+        player.skipNext = false;
+        panel(player.name + "は休み", "スキップが残っていたので、この番は回しません。", "つぎの人へ", nextPlayer);
+        return;
+      }
+      showWheel();
+    }
+    function nextPlayer() {
+      closeOverlay();
+      turn = (turn + 1) % players.length;
+      beginTurn();
+    }
+    function resolveSpace(player) {
+      var space = SPACES[player.pos];
+      if (space.type === "goal") {
+        phase = "win";
+        hideWheel();
+        overlay.hidden = false;
+        overlay.innerHTML =
+          '<div class="panel"><h2></h2><p>ぴったりゴールしました。</p>' +
+          '<button type="button" class="next-btn" id="againBtn">もう一度</button>' +
+          '<a class="ghost-btn" href="games.html">ゲーム選択へ</a></div>';
+        overlay.querySelector("h2").textContent = player.name + "がゴール";
+        overlay.querySelector("h2").style.color = COLORS[player.colorIndex].hex;
+        overlay.querySelector("#againBtn").addEventListener("click", again);
+        return;
+      }
+      if (space.type === "card") {
+        showCard(space.cardIndex);
+        return;
+      }
+      if (space.type === "drink") {
+        panel("無条件で1杯飲む", player.name + "が1杯。", "つぎの人へ", nextPlayer);
+        return;
+      }
+      if (space.type === "skip") {
+        player.skipNext = true;
+        panel("スキップ", player.name + "の次の番は1回休み。", "つぎの人へ", nextPlayer);
+      }
+    }
+    async function applyRoll(roll, myLife) {
+      var player = players[turn];
+      var remain = GOAL - player.pos;
+      hideWheel();
+      if (roll > remain) {
+        panel(
+          roll + "マスは進まない",
+          "残り" + remain + "マス。ぴったりではないので、この場に残る。",
+          "つぎの人へ",
+          nextPlayer
+        );
+        return;
+      }
+      phase = "moving";
+      for (var step = 0; step < roll; step++) {
+        if (myLife !== life) return;
+        player.pos += 1;
+        hopping = turn;
+        renderTokens();
+        await wait(reduceMotion() ? 40 : 280);
+      }
+      hopping = -1;
+      if (myLife !== life) return;
+      renderTokens();
+      resolveSpace(player);
+    }
+    function finishSpin(roll, token, myLife) {
+      if (myLife !== life || token !== spinToken || phase !== "spinning") return;
+      phase = "landed";
+      stepNum.textContent = String(roll);
+      wheelCta.hidden = true;
+      setTimeout(function () {
+        if (myLife !== life) return;
+        applyRoll(roll, myLife);
+      }, reduceMotion() ? 180 : 700);
+    }
+    function startSpin() {
+      if (phase !== "spin") return;
+      phase = "spinning";
+      wheelBtn.disabled = true;
+      var myLife = life;
+      var token = ++spinToken;
+      var index = Math.floor(Math.random() * WHEEL_NUMS.length);
+      var roll = WHEEL_NUMS[index];
+      var center = index * 18 + 9;
+      var target = (270 - center) % 360;
+      if (target < 0) target += 360;
+      var current = ((rotation % 360) + 360) % 360;
+      var delta = target - current;
+      if (delta < 0) delta += 360;
+      delta += 360 * (reduceMotion() ? 1 : 5);
+      rotation += delta;
+      wheelSvg.style.transform = "rotate(" + rotation + "deg)";
+      var done = function (event) {
+        if (event && event.propertyName && event.propertyName !== "transform") return;
+        wheelSvg.removeEventListener("transitionend", done);
+        finishSpin(roll, token, myLife);
+      };
+      wheelSvg.addEventListener("transitionend", done);
+      setTimeout(function () { done(null); }, reduceMotion() ? 500 : 3400);
+    }
+
+    function polar(cx, cy, r, deg) {
+      var rad = (deg - 90) * Math.PI / 180;
+      return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+    }
+    function buildWheel() {
+      var ns = "http://www.w3.org/2000/svg";
+      function node(name, attrs) {
+        var el = document.createElementNS(ns, name);
+        Object.keys(attrs).forEach(function (key) { el.setAttribute(key, attrs[key]); });
+        return el;
+      }
+      WHEEL_NUMS.forEach(function (num, index) {
+        var a0 = index * 18;
+        var a1 = a0 + 18;
+        var p0 = polar(200, 200, 168, a0);
+        var p1 = polar(200, 200, 168, a1);
+        var path = node("path", {
+          d: "M 200 200 L " + p0[0] + " " + p0[1] + " A 168 168 0 0 1 " + p1[0] + " " + p1[1] + " Z",
+          fill: WHEEL_COLORS[num]
+        });
+        wheelSvg.appendChild(path);
+        var at = polar(200, 200, 112, a0 + 9);
+        var text = node("text", {
+          x: at[0],
+          y: at[1],
+          fill: "#161616",
+          "font-size": "28",
+          "font-weight": "800",
+          "text-anchor": "middle",
+          "dominant-baseline": "middle",
+          transform: "rotate(" + (a0 + 9) + " " + at[0] + " " + at[1] + ")"
+        });
+        text.textContent = String(num);
+        wheelSvg.appendChild(text);
+      });
+      wheelSvg.appendChild(node("circle", {
+        cx: "200", cy: "200", r: "184", fill: "none", stroke: "#efd48a", "stroke-width": "16"
+      }));
+      wheelSvg.appendChild(node("circle", {
+        cx: "200", cy: "200", r: "170", fill: "none", stroke: "#8a6a32", "stroke-width": "2"
+      }));
+    }
+
+    function startGame() {
+      life++;
+      spinToken++;
+      var typed = rows.map(function (row) { return row.name.trim(); });
+      remember(typed.filter(Boolean));
+      players = rows.map(function (row, index) {
+        return {
+          name: typed[index] || ("プレイヤー" + (index + 1)),
+          colorIndex: row.colorIndex,
+          pos: 0,
+          skipNext: false
+        };
+      });
+      turn = 0;
+      hopping = -1;
+      closeOverlay();
+      menuLayer.hidden = true;
+      setupEl.hidden = true;
+      playEl.hidden = false;
+      renderBoard();
+      beginTurn();
+      renderHistory();
+    }
+    function again() {
+      life++;
+      spinToken++;
+      players.forEach(function (player) {
+        player.pos = 0;
+        player.skipNext = false;
+      });
+      turn = 0;
+      hopping = -1;
+      closeOverlay();
+      beginTurn();
+    }
+    function abandon() {
+      life++;
+      spinToken++;
+      phase = "setup";
+      hideWheel();
+      closeOverlay();
+      menuLayer.hidden = true;
+      playEl.hidden = true;
+      setupEl.hidden = false;
+    }
+
+    addBtn.addEventListener("click", function () {
+      if (rows.length >= COLORS.length) return;
+      var used = rows.map(function (row) { return row.colorIndex; });
+      var colorIndex = 0;
+      while (used.indexOf(colorIndex) !== -1) colorIndex++;
+      rows.push({ colorIndex: colorIndex, name: "" });
+      renderRows();
+    });
+    document.getElementById("startBtn").addEventListener("click", startGame);
+    wheelBtn.addEventListener("click", startSpin);
+    document.getElementById("menuBtn").addEventListener("click", function () {
+      menuLayer.hidden = false;
+    });
+    document.getElementById("menuClose").addEventListener("click", function () {
+      menuLayer.hidden = true;
+    });
+    document.getElementById("rulesBtn").addEventListener("click", function () {
+      rulesText.hidden = !rulesText.hidden;
+    });
+    document.getElementById("restartBtn").addEventListener("click", abandon);
+
+    buildWheel();
+    renderRows();
+    renderHistory();
+  </script>
+</body>
+</html>
