@@ -2,7 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Party Games" />
+  <meta name="theme-color" content="#0c0610" />
+  <link rel="manifest" href="manifest.json" />
   <title>Party Games</title>
   <style>
     :root {
@@ -33,7 +39,7 @@
     .app {
       max-width: 520px;
       margin: 0 auto;
-      padding: 28px 16px 40px;
+      padding: calc(28px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
     }
     .brand small {
       letter-spacing: 0.28em;
@@ -150,6 +156,7 @@
       border-color: var(--gold);
     }
   </style>
+  <script src="pwa.js"></script>
   <script src="theme.js"></script>
 </head>
 <body>

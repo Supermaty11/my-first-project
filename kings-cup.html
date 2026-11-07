@@ -2,7 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Party Games" />
+  <meta name="theme-color" content="#0c0610" />
+  <link rel="manifest" href="manifest.json" />
   <title>King's Cup | キングスカップ</title>
   <style>
     :root {
@@ -44,7 +50,7 @@
     .app {
       max-width: 520px;
       margin: 0 auto;
-      padding: 16px 16px 28px;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
       min-height: 100dvh;
       display: flex;
       flex-direction: column;
@@ -409,6 +415,7 @@
     .burst-rule b { color: var(--gold); }
     .burst-rule span { color: var(--muted); font-size: 13px; line-height: 1.45; display: block; margin-top: 2px; }
   </style>
+  <script src="pwa.js"></script>
   <script src="theme.js"></script>
 </head>
 <body>
