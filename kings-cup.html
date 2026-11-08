@@ -530,7 +530,7 @@
       7: { title: "スパイダーマン シュッ", body: "スパイダーマンのポーズでシュッ。" },
       8: { title: "連帯責任", body: "連帯責任。対象の人も一緒に飲む。" },
       9: { title: "好きなゲーム", body: "好きなゲームを指定して遊ぶ。" },
-      10: { title: "次の自分の番で3枚", body: "今は何もしない。次に自分の番が回ってきたとき、1タップで3枚めくる。" },
+      10: { title: "次の自分の番で3枚", body: "今は何もしない。次に自分の番が回ってきたとき、タップごとに1枚ずつ、3枚めくる。" },
       11: { title: "好きなルールをつくる", body: "好きなハウスルールを1つ作れる。以降破った人は飲む。" },
       12: { title: "クエスチョンマスター", body: "このカードの持ち主の質問に答えてしまった人は飲む。次のQが出るまで有効。" },
       13: { title: "ずんちゃか（4枚目）", body: "4枚目のキングを引いたらずんちゃか。" },
@@ -547,6 +547,7 @@
     let tripleNames = new Set();
     let pendingFreeTriple = false;
     let thisTurnCount = 1;
+    let tripleActive = false;
     let phase = "idle";
 
     const deckCard = document.getElementById("deckCard");
@@ -617,12 +618,14 @@
         return;
       }
       if (phase === "showing") {
-        deckHint.textContent = "タップで次の人へ";
+        deckHint.textContent = thisTurnCount > 1
+          ? "タップで次の1枚へ"
+          : "タップで次の人へ";
         return;
       }
       if (phase === "nextTurn") {
         deckHint.textContent = thisTurnCount > 1
-          ? "タップで3枚まとめてめくる"
+          ? "タップで次の1枚をめくる"
           : "タップでカードをめくる";
         return;
       }
@@ -631,7 +634,7 @@
 
     function renderTurn() {
       const p = currentPlayer();
-      const tripleNote = (phase === "nextTurn" || phase === "idle") && thisTurnCount > 1
+      const tripleNote = tripleActive
         ? '<span class="triple-note">（この番 3枚）</span>'
         : "";
       document.getElementById("turnName").innerHTML = p
@@ -668,10 +671,10 @@
       if (card.rank === 10) {
         if (p) {
           tripleNames.add(p);
-          return `${p}さんの次の自分の番で3枚`;
+          return `${p}さんの次の自分の番で、タップごとに1枚ずつ3枚`;
         }
         pendingFreeTriple = true;
-        return "次に山札をめくるとき3枚";
+        return "次に山札をめくるとき、タップごとに1枚ずつ3枚";
       }
       if (card.rank === 13 && kingCount >= 4) return p ? `${p}さん、ずんちゃか！` : "ずんちゃか！";
       if (card.type === "joker" && jokerCount >= 2) return p ? `${p}さん、ずんちゃか！` : "ずんちゃか！";
@@ -702,13 +705,6 @@
       document.getElementById("ruleTitle").textContent = "山札をタップしてめくる";
       document.getElementById("ruleBody").textContent = "1枚ずつ。役に従って盛り上がろう。";
       nominateEl.classList.remove("show");
-    }
-
-    function miniHtml(card) {
-      if (card.type === "joker") {
-        return `<div class="mini-card joker"><div class="rank">JK</div><div class="center-suit">🃏</div></div>`;
-      }
-      return `<div class="mini-card ${card.suit.color}"><div class="rank">${card.label}<div class="suit">${card.suit.mark}</div></div><div class="center-suit">${card.suit.mark}</div></div>`;
     }
 
     function hideBurst() {
@@ -767,41 +763,9 @@
       }, 720);
     }
 
-    function drawBurst() {
-      const n = Math.min(3, deck.length);
-      const cards = [];
-      for (let i = 0; i < n; i++) cards.push(deck.pop());
-      cards.forEach(applyCounts);
-      renderDots();
-      deckCard.classList.remove("flipped");
-      deckCard.style.display = "none";
-      const burst = document.getElementById("burstWrap");
-      burst.innerHTML = cards.map(miniHtml).join("");
-      burst.classList.add("show");
-      document.getElementById("ruleSingle").hidden = true;
-      const burstRules = document.getElementById("ruleBurst");
-      burstRules.classList.add("show");
-      burstRules.innerHTML = cards.map(card => {
-        const r = ruleText(card);
-        const extra = extraFor(card);
-        return `<div class="burst-rule"><b>${cardLabel(card)} ${r.title}</b><span>${r.body}${extra ? " / " + extra : ""}</span></div>`;
-      }).join("");
-      remainEl.textContent = deck.length ? `残り ${deck.length} 枚` : "山札切れ — リセットして再開";
-      phase = "showing";
-      flipping = false;
-      updateHint();
-      renderTurn();
-    }
-
     function draw() {
       if (flipping || deck.length === 0) return;
       flipping = true;
-      if (thisTurnCount > 1) {
-        hideBurst();
-        drawBurst();
-        thisTurnCount = 1;
-        return;
-      }
       hideBurst();
       const card = deck.pop();
       if (deckCard.classList.contains("flipped")) {
@@ -816,12 +780,15 @@
       const p = currentPlayer();
       if (p && tripleNames.has(p)) {
         tripleNames.delete(p);
+        tripleActive = true;
         return 3;
       }
       if (!players.length && pendingFreeTriple) {
         pendingFreeTriple = false;
+        tripleActive = true;
         return 3;
       }
+      tripleActive = false;
       return 1;
     }
 
@@ -829,6 +796,20 @@
       if (flipping) return;
       if (phase === "showing") {
         if (deck.length === 0) return;
+        if (thisTurnCount > 1) {
+          thisTurnCount -= 1;
+          phase = "nextTurn";
+          hideBurst();
+          readyRulePanel();
+          if (deckCard.classList.contains("flipped")) {
+            flipping = true;
+            deckCard.classList.remove("flipped");
+            setTimeout(() => { flipping = false; }, 380);
+          }
+          renderTurn();
+          updateHint();
+          return;
+        }
         if (players.length) turn = (turn + 1) % players.length;
         thisTurnCount = countForUpcomingTurn();
         phase = "nextTurn";
@@ -854,6 +835,7 @@
       tripleNames = new Set();
       pendingFreeTriple = false;
       thisTurnCount = 1;
+      tripleActive = false;
       phase = "idle";
       turn = 0;
       hideBurst();
