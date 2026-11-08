@@ -757,10 +757,7 @@
       const wrap = document.getElementById("burstWrap");
       wrap.innerHTML = burstCards.map(() => `<div class="mini-card down"></div>`).join("");
       wrap.classList.add("show");
-      document.getElementById("ruleSingle").hidden = true;
-      const burstRules = document.getElementById("ruleBurst");
-      burstRules.classList.add("show");
-      burstRules.innerHTML = "";
+      readyRulePanel();
       remainEl.textContent = deck.length ? `残り ${deck.length} 枚` : "山札切れ — リセットして再開";
     }
 
@@ -773,12 +770,7 @@
       el.innerHTML = miniFaceHtml(card);
       applyCounts(card);
       renderDots();
-      const r = ruleText(card);
-      const extra = extraFor(card);
-      const row = document.createElement("div");
-      row.className = "burst-rule";
-      row.innerHTML = `<b>${cardLabel(card)} ${r.title}</b><span>${r.body}${extra ? " / " + extra : ""}</span>`;
-      document.getElementById("ruleBurst").appendChild(row);
+      showSingleRule(card, extraFor(card));
       burstRevealed += 1;
       remainEl.textContent = deck.length ? `残り ${deck.length} 枚` : "山札切れ — リセットして再開";
       phase = "showing";
