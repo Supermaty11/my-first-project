@@ -391,7 +391,24 @@
       flex-direction: column;
       justify-content: space-between;
       box-shadow: var(--shadow);
-      animation: popIn 0.35s ease;
+    }
+    .mini-card.down {
+      background: repeating-linear-gradient(45deg, var(--card-a) 0 6px, var(--card-b) 6px 12px);
+      border-color: var(--gold);
+      color: var(--gold-2);
+      justify-content: center;
+      align-items: center;
+    }
+    .mini-card.down::after {
+      content: "K";
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--gold-2);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      font-weight: 900;
     }
     .mini-card.red { color: var(--red); }
     .mini-card.joker {
@@ -548,6 +565,8 @@
     let pendingFreeTriple = false;
     let thisTurnCount = 1;
     let tripleActive = false;
+    let burstCards = [];
+    let burstRevealed = 0;
     let phase = "idle";
 
     const deckCard = document.getElementById("deckCard");
@@ -617,16 +636,18 @@
         deckHint.textContent = "山札切れ — リセットして再開";
         return;
       }
+      if (burstCards.length && burstRevealed < burstCards.length) {
+        deckHint.textContent = burstRevealed === 0
+          ? "タップで1枚めくる"
+          : "タップで次の1枚をめくる";
+        return;
+      }
       if (phase === "showing") {
-        deckHint.textContent = thisTurnCount > 1
-          ? "タップで次の1枚へ"
-          : "タップで次の人へ";
+        deckHint.textContent = "タップで次の人へ";
         return;
       }
       if (phase === "nextTurn") {
-        deckHint.textContent = thisTurnCount > 1
-          ? "タップで次の1枚をめくる"
-          : "タップでカードをめくる";
+        deckHint.textContent = "タップでカードをめくる";
         return;
       }
       deckHint.textContent = "山札をタップ";
@@ -708,12 +729,62 @@
     }
 
     function hideBurst() {
+      burstCards = [];
+      burstRevealed = 0;
       document.getElementById("burstWrap").classList.remove("show");
       document.getElementById("burstWrap").innerHTML = "";
       deckCard.style.display = "";
       document.getElementById("ruleBurst").classList.remove("show");
       document.getElementById("ruleBurst").innerHTML = "";
       document.getElementById("ruleSingle").hidden = false;
+    }
+
+    function miniFaceHtml(card) {
+      if (card.type === "joker") {
+        return `<div class="rank">JK</div><div class="center-suit">🃏</div>`;
+      }
+      return `<div class="rank">${card.label}<div class="suit">${card.suit.mark}</div></div><div class="center-suit">${card.suit.mark}</div>`;
+    }
+
+    function setupBurst() {
+      const n = Math.min(3, deck.length);
+      if (!n) return;
+      burstCards = [];
+      for (let i = 0; i < n; i++) burstCards.push(deck.pop());
+      burstRevealed = 0;
+      deckCard.classList.remove("flipped");
+      deckCard.style.display = "none";
+      const wrap = document.getElementById("burstWrap");
+      wrap.innerHTML = burstCards.map(() => `<div class="mini-card down"></div>`).join("");
+      wrap.classList.add("show");
+      document.getElementById("ruleSingle").hidden = true;
+      const burstRules = document.getElementById("ruleBurst");
+      burstRules.classList.add("show");
+      burstRules.innerHTML = "";
+      remainEl.textContent = deck.length ? `残り ${deck.length} 枚` : "山札切れ — リセットして再開";
+    }
+
+    function revealNextBurst() {
+      if (flipping || burstRevealed >= burstCards.length) return;
+      flipping = true;
+      const card = burstCards[burstRevealed];
+      const el = document.getElementById("burstWrap").children[burstRevealed];
+      el.className = "mini-card" + (card.type === "joker" ? " joker" : card.suit ? ` ${card.suit.color}` : "");
+      el.innerHTML = miniFaceHtml(card);
+      applyCounts(card);
+      renderDots();
+      const r = ruleText(card);
+      const extra = extraFor(card);
+      const row = document.createElement("div");
+      row.className = "burst-rule";
+      row.innerHTML = `<b>${cardLabel(card)} ${r.title}</b><span>${r.body}${extra ? " / " + extra : ""}</span>`;
+      document.getElementById("ruleBurst").appendChild(row);
+      burstRevealed += 1;
+      remainEl.textContent = deck.length ? `残り ${deck.length} 枚` : "山札切れ — リセットして再開";
+      phase = "showing";
+      updateHint();
+      renderTurn();
+      setTimeout(() => { flipping = false; }, 280);
     }
 
     function addPlayer(name) {
@@ -794,34 +865,32 @@
 
     function onDeckTap() {
       if (flipping) return;
+      if (burstCards.length && burstRevealed < burstCards.length) {
+        revealNextBurst();
+        return;
+      }
       if (phase === "showing") {
-        if (deck.length === 0) return;
-        if (thisTurnCount > 1) {
-          thisTurnCount -= 1;
-          phase = "nextTurn";
-          hideBurst();
+        if (deck.length === 0 && !burstCards.length) return;
+        if (players.length) turn = (turn + 1) % players.length;
+        hideBurst();
+        thisTurnCount = countForUpcomingTurn();
+        phase = "nextTurn";
+        if (tripleActive) {
+          setupBurst();
+        } else {
           readyRulePanel();
           if (deckCard.classList.contains("flipped")) {
             flipping = true;
             deckCard.classList.remove("flipped");
             setTimeout(() => { flipping = false; }, 380);
           }
-          renderTurn();
-          updateHint();
-          return;
-        }
-        if (players.length) turn = (turn + 1) % players.length;
-        thisTurnCount = countForUpcomingTurn();
-        phase = "nextTurn";
-        hideBurst();
-        readyRulePanel();
-        if (deckCard.classList.contains("flipped")) {
-          flipping = true;
-          deckCard.classList.remove("flipped");
-          setTimeout(() => { flipping = false; }, 380);
         }
         renderTurn();
         updateHint();
+        return;
+      }
+      if (tripleActive && burstCards.length) {
+        revealNextBurst();
         return;
       }
       draw();
@@ -836,6 +905,8 @@
       pendingFreeTriple = false;
       thisTurnCount = 1;
       tripleActive = false;
+      burstCards = [];
+      burstRevealed = 0;
       phase = "idle";
       turn = 0;
       hideBurst();
