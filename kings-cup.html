@@ -320,9 +320,52 @@
       background: var(--chip);
       border-radius: 12px;
       padding: 10px;
+      border: 1px solid transparent;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      color: inherit;
+      cursor: pointer;
     }
+    .rule-row.custom { border-color: var(--line); }
     .rule-row b { color: var(--gold); }
     .rule-row span { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .rule-custom-tag {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin-left: 6px;
+    }
+    .rule-edit { display: grid; gap: 10px; }
+    .rule-edit label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+    }
+    .rule-edit input, .rule-edit textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--ink);
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .rule-edit textarea { min-height: 96px; resize: vertical; }
+    .modal-back {
+      border: 0;
+      background: var(--chip);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-family: inherit;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
 
     .setup-form { display: grid; gap: 10px; }
     .setup-form input {
@@ -495,10 +538,27 @@
 
   <div class="overlay" id="rulesModal">
     <div class="modal">
-      <h2>ルール一覧</h2>
-      <div class="rule-list" id="ruleList"></div>
-      <div class="actions" style="margin-top:14px">
-        <button class="btn btn-gold" id="closeRules">閉じる</button>
+      <div id="rulesListView">
+        <h2>ルール一覧</h2>
+        <p class="note">行をタップして役を変えられます。この端末に保存されます。</p>
+        <div class="rule-list" id="ruleList"></div>
+        <div class="actions" style="margin-top:14px">
+          <button class="btn btn-gold" id="closeRules">閉じる</button>
+        </div>
+      </div>
+      <div id="rulesEditView" hidden>
+        <button type="button" class="modal-back" id="rulesEditBack">一覧へ戻る</button>
+        <h2 id="rulesEditHeading">役を変更</h2>
+        <div class="rule-edit">
+          <label for="ruleTitleInput">タイトル</label>
+          <input id="ruleTitleInput" maxlength="40" />
+          <label for="ruleBodyInput">説明</label>
+          <textarea id="ruleBodyInput" maxlength="200" rows="4"></textarea>
+        </div>
+        <div class="actions" style="margin-top:14px">
+          <button type="button" class="btn btn-ghost" id="ruleResetBtn">デフォルトに戻す</button>
+          <button type="button" class="btn btn-gold" id="ruleSaveBtn">保存</button>
+        </div>
       </div>
     </div>
   </div>
@@ -525,6 +585,7 @@
   <script>
     const PLAYERS_KEY = "kc_players";
     const REGULARS_KEY = "kc_regulars";
+    const RULES_KEY = "kc_rule_overrides";
     const SUITS = [
       { id: "S", mark: "♠", color: "black" },
       { id: "H", mark: "♥", color: "red" },
@@ -568,6 +629,8 @@
     let burstCards = [];
     let burstRevealed = 0;
     let phase = "idle";
+    let ruleOverrides = loadRuleOverrides();
+    let editingRuleKey = null;
 
     const deckCard = document.getElementById("deckCard");
     const deckFace = document.getElementById("deckFace");
@@ -590,6 +653,35 @@
 
     function saveRegulars() {
       localStorage.setItem(REGULARS_KEY, JSON.stringify(regulars));
+    }
+
+    function loadRuleOverrides() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(RULES_KEY) || "{}");
+        if (!raw || typeof raw !== "object") return {};
+        const out = {};
+        Object.keys(RULES).forEach((key) => {
+          const v = raw[key];
+          if (v && typeof v.title === "string" && typeof v.body === "string") {
+            out[key] = { title: v.title, body: v.body };
+          }
+        });
+        return out;
+      } catch {
+        return {};
+      }
+    }
+
+    function saveRuleOverrides() {
+      localStorage.setItem(RULES_KEY, JSON.stringify(ruleOverrides));
+    }
+
+    function rankLabel(key) {
+      return key === "JOKER" ? "JK" : key === "1" ? "A" : key === "11" ? "J" : key === "12" ? "Q" : key === "13" ? "K" : key;
+    }
+
+    function getRule(key) {
+      return ruleOverrides[key] || RULES[key];
     }
 
     function escapeHtml(str) {
@@ -672,11 +764,13 @@
     }
 
     function ruleText(card) {
-      const key = card.type === "joker" ? "JOKER" : card.rank;
-      const rule = RULES[key];
+      const key = card.type === "joker" ? "JOKER" : String(card.rank);
+      const rule = getRule(key);
       let body = rule.body;
-      if (card.rank === 13 && kingCount >= 4) body = "4枚目のキング！ ずんちゃか。";
-      if (card.type === "joker" && jokerCount >= 2) body = "2枚目のジョーカー！ ずんちゃか。";
+      if (!ruleOverrides[key]) {
+        if (card.rank === 13 && kingCount >= 4) body = "4枚目のキング！ ずんちゃか。";
+        if (card.type === "joker" && jokerCount >= 2) body = "2枚目のジョーカー！ ずんちゃか。";
+      }
       return { title: rule.title, body };
     }
 
@@ -961,17 +1055,63 @@
     });
     document.getElementById("resetBtn").addEventListener("click", resetGame);
 
+    function showRulesList() {
+      editingRuleKey = null;
+      document.getElementById("rulesListView").hidden = false;
+      document.getElementById("rulesEditView").hidden = true;
+      renderRuleList();
+    }
+
+    function renderRuleList() {
+      document.getElementById("ruleList").innerHTML = Object.keys(RULES).map((key) => {
+        const v = getRule(key);
+        const custom = ruleOverrides[key] ? '<span class="rule-custom-tag">変更済</span>' : "";
+        return `<button type="button" class="rule-row${ruleOverrides[key] ? " custom" : ""}" data-key="${key}"><b>${rankLabel(key)}</b><span><b>${escapeHtml(v.title)}</b>${custom}<br>${escapeHtml(v.body)}</span></button>`;
+      }).join("");
+    }
+
+    function openRuleEditor(key) {
+      editingRuleKey = key;
+      const v = getRule(key);
+      document.getElementById("rulesListView").hidden = true;
+      document.getElementById("rulesEditView").hidden = false;
+      document.getElementById("rulesEditHeading").textContent = `${rankLabel(key)} の役を変更`;
+      document.getElementById("ruleTitleInput").value = v.title;
+      document.getElementById("ruleBodyInput").value = v.body;
+    }
+
     document.getElementById("rulesBtn").addEventListener("click", () => {
+      showRulesList();
       document.getElementById("rulesModal").classList.add("open");
     });
     document.getElementById("closeRules").addEventListener("click", () => {
       document.getElementById("rulesModal").classList.remove("open");
+      showRulesList();
+    });
+    document.getElementById("rulesEditBack").addEventListener("click", showRulesList);
+    document.getElementById("ruleList").addEventListener("click", (e) => {
+      const row = e.target.closest("[data-key]");
+      if (row) openRuleEditor(row.getAttribute("data-key"));
+    });
+    document.getElementById("ruleSaveBtn").addEventListener("click", () => {
+      if (!editingRuleKey) return;
+      const title = document.getElementById("ruleTitleInput").value.trim();
+      const body = document.getElementById("ruleBodyInput").value.trim();
+      if (!title || !body) return;
+      const def = RULES[editingRuleKey];
+      if (title === def.title && body === def.body) delete ruleOverrides[editingRuleKey];
+      else ruleOverrides[editingRuleKey] = { title, body };
+      saveRuleOverrides();
+      showRulesList();
+    });
+    document.getElementById("ruleResetBtn").addEventListener("click", () => {
+      if (!editingRuleKey) return;
+      delete ruleOverrides[editingRuleKey];
+      saveRuleOverrides();
+      showRulesList();
     });
 
-    document.getElementById("ruleList").innerHTML = Object.entries(RULES).map(([k, v]) => {
-      const label = k === "JOKER" ? "JK" : (k === "1" ? "A" : k === "11" ? "J" : k === "12" ? "Q" : k === "13" ? "K" : k);
-      return `<div class="rule-row"><b>${label}</b><span><b>${v.title}</b><br>${v.body}</span></div>`;
-    }).join("");
+    renderRuleList();
 
     renderSetup();
     resetGame();
